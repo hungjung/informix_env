@@ -1,0 +1,31 @@
+# Informix 14.10 測試靶機 — Compose Specification（無 version 欄位，V2 相容）
+# 啟動：docker-compose up -d
+# 日誌：docker-compose logs -f
+# 停止：docker-compose down          （保留資料）
+# 重建：docker-compose down -v        （連同資料 volume 一起清除）
+
+services:
+  informix:
+    image: icr.io/informix/informix-developer-database:14.10.FC9W1DE
+    container_name: ifx
+    hostname: ifx
+    environment:
+      LICENSE: accept          # 必填，缺少時容器不會初始化
+      DB_INIT: testdb          # 初始化時自動建立練習資料庫
+      HQSERVER: START
+      HQAGENT: START
+      HQADMIN_PASSWORD: "ifxPwd14"
+      INFORMIX_PASSWORD: "ifxPwd14"
+      DB_LOCALE: zh_tw.utf8  # 需要中文語系時再開啟
+    ports:
+      - "127.0.0.1:9088:9088"            # SQLI 主連線埠（onsoctcp）— DBeaver / dbaccess 用這個
+      - "127.0.0.1:9089:9089"            # DRDA
+      - "127.0.0.1:27017:27017"          # Wire Listener（MongoDB 相容）— CVE-2026-13476 攻擊面
+      - "127.0.0.1:27018:27018"          # Wire Listener
+      - "127.0.0.1:27883:27883"          # Wire Listener（REST）
+    volumes:
+      - ifx_data:/opt/ibm/data # 資料持久化；容器重建不遺失
+    restart: unless-stopped    # 單機測試用；搬到 Swarm 需改 deploy.restart_policy
+
+volumes:
+  ifx_data:
