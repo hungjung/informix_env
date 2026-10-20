@@ -11,7 +11,6 @@ services:
     hostname: ifx
     environment:
       LICENSE: accept          # 必填，缺少時容器不會初始化
-      DB_INIT: testdb          # 初始化時自動建立練習資料庫
       HQSERVER: START
       HQAGENT: START
       HQADMIN_PASSWORD: "ifxPwd14"

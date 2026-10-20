@@ -33,14 +33,45 @@
 | Server 名稱（INFORMIXSERVER） | `informix`（進容器用 `echo $INFORMIXSERVER` 確認） |
 | 使用者 | `informix` |
 | 密碼 | compose 的 `INFORMIX_PASSWORD` 值 |
-| 練習資料庫 | `testdb`（由 `DB_INIT` 自動建立） |
+| 練習資料庫 | `testdb`（**developer 版需手動建立**，見第 3 節） |
 
 > ⚠️ 目前 compose 裡的 `INFORMIX_PASSWORD` / `HQADMIN_PASSWORD` 還是佔位字串 `<strong-password>`，
 > 連線前請改成實際密碼並 `down -v` 後重建容器，否則初始化的密碼就是那串佔位字。
+>
+> ⚠️ **映像檔差異**：`DB_INIT` 只有 **innovator-c** 映像檔會自動建庫；目前使用的
+> **developer-database** 映像檔不吃這個變數，啟動後 `testdb` 不存在，需手動建立（第 3 節）。
+> compose 裡的 `DB_INIT: testdb` 留著無害，但對 developer 版沒有作用。
 
 ---
 
-## 3. 進容器用 dbaccess（內建互動介面）
+## 3. 建立 testdb + 進容器用 dbaccess（內建互動介面）
+
+### 3-1. 第一次啟動：手動建立 testdb（developer 版必做）
+
+developer 映像檔不會自動建庫，首次 `up -d` 後先建一次（之後只要不 `down -v`，testdb 都在）：
+
+```bash
+sudo docker exec -it ifx bash
+
+# 建立練習資料庫（WITH LOG 啟用交易紀錄，支援 BEGIN WORK / COMMIT）
+echo "CREATE DATABASE testdb WITH LOG;" | dbaccess -
+```
+
+> 不需要交易就用 `CREATE DATABASE testdb;`（省去交易紀錄負擔）。
+> 一步到位版（不先開 bash）：
+> ```bash
+> echo "CREATE DATABASE testdb WITH LOG;" | sudo docker exec -i ifx dbaccess -
+> ```
+
+確認建好了：
+
+```bash
+echo "SELECT name FROM sysdatabases;" | dbaccess sysmaster
+```
+
+> 若遇到 `329: Database not found`，就是 testdb 還沒建，回到上一步建立即可。
+
+### 3-2. 進入 dbaccess 互動介面
 
 ```bash
 # 進容器 shell（會自動載入 INFORMIXDIR / PATH 等環境變數）
